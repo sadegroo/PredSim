@@ -1,4 +1,4 @@
 [submodule "opensimAD"]
 	path = opensimAD
-	url = https://github.com/KULeuvenNeuromechanics/opensimAD
-	branch = matlab_implementation
+	url = https://github.com/sadegroo/opensimAD
+	branch = PredSim_fixes
