@@ -121,7 +121,11 @@ Quickly navigate to:
     > 3. Read from model file. Qs: min and max coordinate values
 - **S.misc.msk_geom_n_samples**:
     - Number of samples for the dummy motion that is used to fit the approximated musculoskeletal geometry. Default is *5000* [double]
-
+- **S.misc.msk_geom_always_new_fit**:
+    - Perform a new fit for the approximated musculoskeletal geometry, potentially overwriting previously saved approximations. Default is *false* [bool].
+- **S.misc.reduce_coeff_fit**:
+    - After fitting the approximated musculoskeletal geometry, try to obtain an acceptable fit with a reduced set of coefficients. Default is *true* [bool].
+    This routine is based on [work by Harba and Serrancolí](https://github.com/gilserrancoli/ReducePoly_forMSK/tree/main/MuscleTendonLengthParameterizationReduction).
 - **S.misc.visualize_bounds**: 
     - specify if bounds and initial guess are visualized (0 or 1). Default is *0* [double]
 - **S.misc.dampingCoefficient**: 
@@ -236,14 +240,20 @@ Quickly navigate to:
     - Set limit torque coefficients for a coordinate. Default is empty [cell array] with pattern {coordinate name(s) [char, cell array of chars], K [4x1 double], theta [2x1 double]}.
     For the specified coordinates, the coefficients from this setting take priority over the coefficients from the file with defaults (*S.subject.default_coord_lim_torq_coeff*).
     Note: Setting `K(1) = nan` will cause the limit torque for that coordinate to be excluded, even if it was given in the defaults.
-- **S.subject.base_joints_legs**:
-    - Joint name that is the base of a leg, left and right. Default is 'hip' [char]. Inputs of the form 'hip_r', {'hip_l'}, {'hip_r','hip_l'} are equivalent.
-- **S.subject.base_joints_arms**:
-    - Joint name that is the base of an arm, left and right. Default is 'acromial' [char]. Inputs of the form 'acromial_r', {'acromial_l'}, {'acromial_r','acromial_l'} are equivalent. Set to empty [] if the model does not have arms.
 - **S.subject.stiffness_all_ligaments**:
     - Default stiffness model (i.e. force-length) used for ligaments. Default is [*ligamentGefen2002*](../ModelComponents/ligamentGefen2002.m) [char]
 - **S.subject.set_stiffness_selected_ligaments**:
     - Use name-value pairs to use different stiffness models for specific ligaments. Default is *{'PlantarFascia',['plantarFasciaNatali2010'](../ModelComponents/plantarFasciaNatali2010.m)}* 
+- **S.subject.default_specific_tension**:
+    - file with default value for the specific tension of each muscle. Default is *'default_specific_tensions.csv'* [char].
+    The provided file should be compatible with [`readtable`](https://mathworks.com/help/matlab/ref/readtable.html). The table should contain a column with coordinate names (header: name) and a column with specific tension values (header: specific_tension). Default values are taken from [Uchida et al. (2016)](https://simtk.org/frs/?group_id=1064). 
+    For the 2D model (i.e. gait1018), specific tensions of lumped muscles (e.g. hamstrings) are determined using the FMo-weighted average of the associated muscles in the 3D model.
+	If the model contains muscles that are not included in the file, their default specific tension will be set to 0.25.
+    If a scalar value is passed instead of a file, that value will be used for all muscles.
+- **S.subject.base_joints_legs**:
+    - Joint name that is the base of a leg, left and right. Default is 'hip' [char]. Inputs of the form 'hip_r', {'hip_l'}, {'hip_r','hip_l'} are equivalent.
+- **S.subject.base_joints_arms**:
+    - Joint name that is the base of an arm, left and right. Default is 'acromial' [char]. Inputs of the form 'acromial_r', {'acromial_l'}, {'acromial_r','acromial_l'} are equivalent. Set to empty [] if the model does not have arms.
 - **S.subject.synergies**:
 	- boolean that indicates if muscle activations are controlled by synergies. Default is *0* (no synergies implemented).
 	- When synergies are implemented, different variables need to be defined:
@@ -303,9 +313,13 @@ These settings are passed to OpenSimAD.
 - **S.OpenSimADOptions.input3DBodyMoments**:
     - add 3D moment vectors that act on bodies. Default is empty. Needs further implementations before this can be used.
 - **S.OpenSimADOptions.export3DPositions**:
-    - export 3D position of points in bodies, in ground reference frame. Default is empty. Needs further implementations before this can be used.
+    - export 3D position of points in bodies, in another reference frame. Default is empty. Needs further implementations before this can be used.
+- **S.OpenSimADOptions.export3DOrientations**:
+    - export 3D orientation of bodies, in another reference frame. Default is empty. Needs further implementations before this can be used.
 - **S.OpenSimADOptions.export3DVelocities**:
-    - export 3D velocity of points in bodies, in ground reference frame. Default is empty. Needs further implementations before this can be used.
+    - export 3D velocity of points in bodies, in another reference frame. Default is empty. Needs further implementations before this can be used.
+- **S.OpenSimADOptions.export3DVelocitiesProjGround**:
+    - export 3D velocity of a point that is the projection onto the global xz-plane of a point in a body. Default is empty. Needs further implementations before this can be used.
 - **S.OpenSimADOptions.exportGRFs**: 
     - Export total ground reaction forces of left and right side. Default is *true* [bool]
 - **S.OpenSimADOptions.exportSeparateGRFs**: 
@@ -314,6 +328,11 @@ These settings are passed to OpenSimAD.
     - Export total ground reaction moments of left and right side. Default is *true* [bool]
 - **S.OpenSimADOptions.exportContactPowers**: 
     - Export power due to vertical compression of each contact element. Default is *true* [bool]
+- **S.OpenSimADOptions.useSerialisedFunction**:
+    - Use a serialised CasADi function instead of an external function. Default is *false* [bool]
+    This serialised function is created with CasADi 3.6.2, and should be compatible with any later version. To create it with another version, [compile your own GenF.exe](../opensimAD/README.md#compiling-genf) from a conda environment with the desired CasADi version.
+- **S.OpenSimADOptions.always_generate**:
+    - Always run OpenSimAD to generate a new function, even if one already exists. This will overwrite the existing function. Default is *false* [bool]
 
 
 #### S.orthosis
