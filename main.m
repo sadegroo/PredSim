@@ -62,13 +62,13 @@ S.solver.N_meshes = 20;
 %% Add exoskeleton
 
 % select orthosis function
-exo1.function_name = 'hipexo';
+exo1.function_name = 'hipexocm';
 
 % set parameters
 exo1.dynamics.xl = -17; % [Nm]
 exo1.dynamics.xu = 17; % [Nm]
-exo1.dynamics.ul = -15; % [Nm]
-exo1.dynamics.uu = 15; % [Nm]
+exo1.dynamics.ul = -10; % [Nm]
+exo1.dynamics.uu = 10; % [Nm]
 
 exo1.gain = 1; %EMG gain for gluteus maximus
 

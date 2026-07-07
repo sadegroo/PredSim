@@ -6,8 +6,8 @@
 %   which can be downloaded from
 %   https://www.science.org/doi/suppl/10.1126/science.aal5054/suppl_file/aal5054_zhang_sm_data_s2.zip.
 %   Note that using the downloaded function will throw an error related to
-%   the variable prev_stride_time. To fix this, set `prev_stride_time = stride_time;`
-%   in the beginning of the function desired_torque_actuator.
+%   the variable prev_stride_time. To fix this, set `prev_stride_time = stride_period;`
+%   in the beginning of the function desired_torque_generator.
 %
 %   References
 %   [1] J. Zhang et al., “Human-in-the-loop optimization of exoskeleton 
@@ -56,14 +56,17 @@ osim_path = fullfile(pathRepo,'Subjects',S.subject.name,[S.subject.name '.osim']
 % select orthosis function
 exo1.function_name = 'ankleExoZhang2017';
 
-% set path to downloaded function - CHANGE THIS
-exo1.dependencies_path = 'c:/path/to/oaal5054_zhang_sm_data_s2';
+% set path to downloaded function
+exo1.dependencies_path = 'C:\Users\u0130154\MATLAB\projects\aal5054_zhang_sm_data_s2';
 
 % set parameters of assistance profile
 exo1.peak_torque = 20; % [Nm]
 exo1.peak_time = 52.9; % [%]
 exo1.rise_time = 26.2; % [%]
 exo1.fall_time = 9.8;  % [%]
+
+%exo1.isFullGaitCycle = true;
+exo1.plotAssistanceProfile = true;
 
 % add orthosis on right side
 exo1.left_right = 'r';

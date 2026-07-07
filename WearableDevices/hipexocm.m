@@ -1,9 +1,11 @@
-function [exo] = hipexo(init, settings_orthosis)
+function [exo] = hipexocm(init, settings_orthosis)
 % --------------------------------------------------------------------------
-% Provisional hip exo with 2 hip flexion/extension actuators
-% Example use of adding internal dynamics to the orthosis 
-% using addDynamics method, and adding controls to optimize for (var_opti
-% method)
+% Hip exo with 2 hip flexion/extension actuators
+% type Cubemars AK80-8
+% Backdrive (Coulomb-like) torque: 0.75 Nm
+% Rotor inertia: 6.086e-05 kgm^2
+% Reduction: 8
+
 %
 % INPUT:
 %   - init -
@@ -25,7 +27,7 @@ function [exo] = hipexo(init, settings_orthosis)
 %   * an object of the class Orthosis
 % 
 % Original author: Sander De Groof
-% Original date: 3/October/2025
+% Original date: 14/November/2025
 % --------------------------------------------------------------------------
 
 % create Orthosis object
@@ -57,21 +59,30 @@ side = settings_orthosis.left_right; % 'l' for left or 'r' for right
 %     TimeVarControl = 10*sin(2*pi*timebase/timebase(end)+pi); %10Nm torque in the middle of cycle
 % end
 
+% pos = var_coord(['hip_flexion_',side],'pos'); % hip position in rad
+vel = exo.var_coord(['hip_flexion_',side],'vel'); % hip velocity in rad/s
+acc = exo.var_coord(['hip_flexion_',side],'acc'); % hip acceleration in rad/s^2
+
+coulomb_friction_torque = 0.75 * atan(1000*vel) *2/pi;
+acceleration_torque = acc * 8 * 8 * 6.086e-05;
+
 % Simple first order dynamics dx/dt = (u-x)/tau
-tc_tau = 0.05; % time constant in seconds
-state_x = exo.var_opti(['state_x_' side '_side'],'state',[settings_orthosis.dynamics.xl settings_orthosis.dynamics.xu]);
-state_x2 = exo.var_opti(['state_x2_' side '_side'],'state',[settings_orthosis.dynamics.xl settings_orthosis.dynamics.xu]*2);
+%tc_tau = 0.05; % time constant in seconds
+%state_x = exo.var_opti(['state_x_' side '_side'],'state',[settings_orthosis.dynamics.xl settings_orthosis.dynamics.xu]);
 control_u = exo.var_opti(['control_u_' side '_side'],'control',[settings_orthosis.dynamics.ul settings_orthosis.dynamics.uu]);
 
 %control_exo = u_hipfl_emg + control_u; % to make it interesting
-control_exo = control_u;
+%control_exo = control_u;
+
+totaltorque = control_u - coulomb_friction_torque - acceleration_torque;
 
 %exo.addDynamics((control_exo-state_x)/tc_tau,['state_x_' side '_side']); %state and control
-exo.addDynamics([(control_exo-state_x)/tc_tau;(control_exo-state_x2)/tc_tau],{['state_x_' side '_side'],['state_x2_' side '_side']}); %state and control
+%exo.addDynamics([(control_exo-state_x)/tc_tau;(control_exo-state_x2)/tc_tau],{['state_x_' side '_side'],['state_x2_' side '_side']}); %state and control
 %exo.addDynamics((emg-state_x)/tc_tau,['state_x_' side '_side']); %state, but no control
-exo.addCoordForce(state_x,['hip_flexion_',side]);
+%exo.addCoordForce(state_x,['hip_flexion_',side]);
 %exo.addCoordForce(state_x+TimeVarControl,['hip_flexion_',side]);
 %exo.addCoordForce(control_u,['hip_flexion_',side]); % add control straight away
+exo.addCoordForce(totaltorque,['hip_flexion_',side]); % add control straight away
 
 %exo.addVarToPostProcessing(state_x,['state_x_' side '_side'])
 %exo.addVarToPostProcessing(control_exo,['control_u_' side '_side'])
