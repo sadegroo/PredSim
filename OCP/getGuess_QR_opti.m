@@ -28,6 +28,9 @@ function guess = getGuess_QR_opti(S,model_info,scaling,d)
 % Original author: Antoine Falisse
 % Original date: 12/19/2018
 %
+% Last edit by: Sander De Groof
+% Last edit date: 10/August/2026
+%
 % --------------------------------------------------------------------------
 % This file is part of PredSim.
 % 
@@ -48,7 +51,7 @@ function guess = getGuess_QR_opti(S,model_info,scaling,d)
 % along with PredSim. If not, see <https://www.gnu.org/licenses/>.
 % --------------------------------------------------------------------------
 
-N = S.solver.N_meshes; % number of mesh intervals
+[tau,~,N] = getMeshIntervals(S); % normalised mesh, number of mesh intervals
 nq = model_info.ExtFunIO.jointi.nq;
 NMuscle = model_info.muscle_info.NMuscle;
 coordi = model_info.ExtFunIO.coordi;
@@ -75,7 +78,8 @@ end
 %% Qs
 % The model is moving forward but with a standing position (Qs=0)
 guess.Qs = zeros(N,nq.all);
-guess.Qs(:,model_info.ExtFunIO.jointi.base_forward) = linspace(0,guess.tf*S.misc.forward_velocity,N);
+guess.Qs(:,model_info.ExtFunIO.jointi.base_forward) = ...
+    guess.tf*S.misc.forward_velocity*tau(1:N)/tau(N);
 % The model is standing on the ground
 guess.Qs(:,model_info.ExtFunIO.jointi.base_vertical) = model_info.IG_pelvis_y;
 

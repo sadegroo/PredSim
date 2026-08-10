@@ -27,6 +27,9 @@ function guess = getGuess_DI_opti(S,model_info,scaling,d)
 % Original author: Antoine Falisse
 % Original date: 12/19/2018
 %
+% Last edit by: Sander De Groof
+% Last edit date: 10/August/2026
+%
 % --------------------------------------------------------------------------
 % This file is part of PredSim.
 % 
@@ -47,7 +50,7 @@ function guess = getGuess_DI_opti(S,model_info,scaling,d)
 % along with PredSim. If not, see <https://www.gnu.org/licenses/>.
 % --------------------------------------------------------------------------
 
-N = S.solver.N_meshes; % number of mesh intervals
+[tau,~,N] = getMeshIntervals(S); % normalised mesh, number of mesh intervals
 nq = model_info.ExtFunIO.jointi.nq;
 NMuscle = model_info.muscle_info.NMuscle;
 coordinate_names = model_info.ExtFunIO.coord_names.all;
@@ -91,8 +94,9 @@ end
 Qs_time = Qs_spline.data(:,strcmp(Qs_guess_IG.colheaders(1,:),'time'));
 time_expi.Qs(1) = find(round(Qs_time,3) == round(time_IC(1),3));
 time_expi.Qs(2) = find(round(Qs_time,3) == round(time_IC(2),3));
-step = (Qs_time(time_expi.Qs(2))-Qs_time(time_expi.Qs(1)))/(N-1);
-interval = Qs_time(time_expi.Qs(1)):step:Qs_time(time_expi.Qs(2));
+% sample the data at the mesh points, the last one is added further down
+interval = Qs_time(time_expi.Qs(1)) + tau(1:N)/tau(N)*...
+    (Qs_time(time_expi.Qs(2))-Qs_time(time_expi.Qs(1)));
 guess.Qs = interp1(round(Qs_time,4),guess.Qs_all,round(interval,4));
 guess.Qs(:,model_info.ExtFunIO.jointi.base_forward) = guess.Qs(:,model_info.ExtFunIO.jointi.base_forward) - ....
     guess.Qs(1,model_info.ExtFunIO.jointi.base_forward);
