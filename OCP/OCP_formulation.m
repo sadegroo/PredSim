@@ -19,6 +19,9 @@ function [] = OCP_formulation(S,model_info,f_casadi)
 % Original author: Dhruv Gupta, Lars D'Hondt, and Bram Van Den Bosch
 % Original date: January-May/2022
 %
+% Last edit by: Sander De Groof
+% Last edit date: 10/August/2026
+%
 % --------------------------------------------------------------------------
 % This file is part of PredSim.
 % 
@@ -44,7 +47,7 @@ t0 = tic;
 
 %% User inputs (typical settings structure)
 % settings for optimization
-N = S.solver.N_meshes; % number of mesh intervals
+[tau,dtau,N] = getMeshIntervals(S); % normalised mesh, number of mesh intervals
 W = S.weights; % weights optimization
 nq = model_info.ExtFunIO.jointi.nq; % lengths of coordinate subsets
 
@@ -306,7 +309,7 @@ end
 
 %% OCP: collocation equations
 % Define CasADi variables for static parameters
-tfk         = MX.sym('tfk'); % MX variable for final time
+hk          = MX.sym('hk'); % MX variable for mesh interval duration
 % Define CasADi variables for states
 ak          = MX.sym('ak',NMuscle);
 aj          = MX.sym('akmesh',NMuscle,d);
@@ -356,7 +359,7 @@ ineq_constr_syn = {}; % Initialize inequality constraint vector
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Time step
-h = tfk/N;
+h = hk;
 % Loop over collocation points
 for j=1:d
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -606,7 +609,7 @@ end
 ineq_constr_syn = vertcat(ineq_constr_syn{:});
 
 % Casadi function to get constraints and objective
-coll_input_vars_def = {tfk,ak,aj,FTtildek,FTtildej,Qsk,Qsj,Qdotsk,Qdotsj,vAk,dFTtildej,Aj,M_ort_coordk,M_ort_bodyk};
+coll_input_vars_def = {hk,ak,aj,FTtildek,FTtildej,Qsk,Qsj,Qdotsk,Qdotsj,vAk,dFTtildej,Aj,M_ort_coordk,M_ort_bodyk};
 if nq.torqAct > 0
     coll_input_vars_def = [coll_input_vars_def,{a_ak,a_aj,e_ak}];
 end
@@ -622,7 +625,7 @@ f_coll = Function('f_coll',coll_input_vars_def,...
 f_coll_map = f_coll.map(N,S.solver.parallel_mode,S.solver.N_threads);
 
 % evaluate function with opti variables
-coll_input_vars_eval = {tf,a(:,1:end-1), a_col, FTtilde(:,1:end-1), FTtilde_col,...
+coll_input_vars_eval = {tf*dtau,a(:,1:end-1), a_col, FTtilde(:,1:end-1), FTtilde_col,...
     Qs(:,1:end-1), Qs_col, Qdots(:,1:end-1), Qdots_col, vA, dFTtilde_col, A_col,...
      M_ort_coord_opti, M_ort_body_opti};
 if nq.torqAct > 0
@@ -1018,15 +1021,11 @@ dFTtilde_opt_unsc = dFTtilde_col_opt_unsc(d:d:end,:);
 
 %% Time grid
 % Mesh points
-tgrid = linspace(0,tf_opt,N+1);
-dtime = zeros(1,d+1);
-for i=1:4
-    dtime(i)=tau_root(i)*(tf_opt/N);
-end
+tgrid = tf_opt*tau;
 % Mesh points and collocation points
 tgrid_ext = zeros(1,(d+1)*N+1);
 for i=1:N
-    tgrid_ext(((i-1)*4+1):1:i*4)=tgrid(i)+dtime;
+    tgrid_ext(((i-1)*4+1):1:i*4)=tgrid(i)+tau_root*(tf_opt*dtau(i));
 end
 tgrid_ext(end)=tf_opt;
 
@@ -1060,8 +1059,8 @@ QdotdotArm_cost = 0;
 Syn_cost        = 0;
 TrackSyn_cost   = 0;
 count           = 1;
-h_opt           = tf_opt/N;
 for k=1:N
+    h_opt = tf_opt*dtau(k);
     for j=1:d
         % Get muscle-tendon lengths, velocities, moment arms
         [lMTkj_opt_all,vMTkj_opt_all,~] = ...
@@ -1339,6 +1338,7 @@ R.objective = contributionCost;
 R.time.mesh = tgrid;
 R.time.coll = tgrid_ext;
 R.time.mesh_GC = t_mesh_GC;
+R.time.mesh_intervals = dtau;
 R.colheaders.coordinates = model_info.ExtFunIO.coord_names.all;
 R.colheaders.muscles = model_info.muscle_info.muscle_names;
 R.colheaders.objective = contributionCost.labels;
