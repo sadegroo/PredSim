@@ -19,6 +19,9 @@ function [S] = getDefaultSettings(S,osim_path)
 % Original author: Bram Van Den Bosch
 % Original date: 30/11/2021
 %
+% Last edit by: Sander De Groof
+% Last edit date: 10/August/2026
+%
 % --------------------------------------------------------------------------
 % This file is part of PredSim.
 % 
@@ -375,6 +378,18 @@ if ~isfield(S.solver,'N_meshes')
     if strcmp(S.misc.gaitmotion_type,'FullGaitCycle')
         S.solver.N_meshes = S.solver.N_meshes*2;
     end
+end
+
+% non-uniform mesh, given as a vector of relative interval durations. Empty
+% (default) gives a uniform mesh of S.solver.N_meshes intervals.
+if ~isfield(S.solver,'mesh_intervals')
+    S.solver.mesh_intervals = [];
+elseif ~isempty(S.solver.mesh_intervals)
+    if any(S.solver.mesh_intervals <= 0)
+        error('S.solver.mesh_intervals has to be strictly positive.')
+    end
+    S.solver.mesh_intervals = S.solver.mesh_intervals(:)'/sum(S.solver.mesh_intervals);
+    S.solver.N_meshes = numel(S.solver.mesh_intervals);
 end
 
 % initial guess inputs
