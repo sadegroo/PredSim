@@ -171,6 +171,12 @@ Quickly navigate to:
     - Path to CasADi installation (top folder). By default, this will use the CasADi installation that is in the matlab search path.
 - **S.solver.N_meshes**: 
     - number of mesh intervals. Default is *50* [double] for S.misc.gaitmotion_type = HalfGaitCycle and *100* for FullGaitCycle	
+- **S.solver.mesh_intervals**:
+    - relative durations of the mesh intervals, allowing a non-uniform mesh. The vector is
+      normalised to sum to 1 and overwrites *S.solver.N_meshes* with its length. Default is
+      *[]* [1 x N double], which gives a uniform mesh. See `getMeshRefinedAtWindows`. On a
+      HalfGaitCycle simulation the mesh describes the half cycle, so a window placed on heel
+      strike refines both heel strikes of the reconstructed full cycle.
 - **S.solver.run_as_batch_job**: 
     - specify if the OCP is to be solved as a batch job. Default is *false* [bool]. Batch processing requires the [Parallel Computing Toolbox](https://nl.mathworks.com/products/parallel-computing.html).
 - **S.solver.batch_job_paths**:

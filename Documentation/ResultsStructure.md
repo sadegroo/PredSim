@@ -33,6 +33,7 @@ See the [overview of settings](../README.md#Required-Settings) for more informat
 |------ | ----------- | ---- | ---- |
 | mesh | timestamps of mesh points of simulation | 1 x (*S.solver.N_meshes* + 1) | [s] |
 | coll | timestamps of mesh and collocation points of simulation | 1 x (*S.solver.N_meshes*\*(collocation_order + 1) + 1) | [s] |
+| mesh_intervals | relative durations of the mesh intervals | 1 x *S.solver.N_meshes* | [-] |
 | mesh_GC | timestamps of mesh points of gait cycle | 1 x (mesh + 1) | [s] |
 
 ### R.colheaders
