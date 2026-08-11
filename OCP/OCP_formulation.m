@@ -48,6 +48,7 @@ t0 = tic;
 %% User inputs (typical settings structure)
 % settings for optimization
 [tau,dtau,N] = getMeshIntervals(S); % normalised mesh, number of mesh intervals
+dtau_inv = 1./dtau; % reciprocal, so a uniform mesh gives h = tf/N exactly
 W = S.weights; % weights optimization
 nq = model_info.ExtFunIO.jointi.nq; % lengths of coordinate subsets
 
@@ -309,7 +310,8 @@ end
 
 %% OCP: collocation equations
 % Define CasADi variables for static parameters
-hk          = MX.sym('hk'); % MX variable for mesh interval duration
+tfk         = MX.sym('tfk'); % MX variable for final time
+nk          = MX.sym('nk'); % MX variable for reciprocal of normalised interval duration
 % Define CasADi variables for states
 ak          = MX.sym('ak',NMuscle);
 aj          = MX.sym('akmesh',NMuscle,d);
@@ -359,7 +361,7 @@ ineq_constr_syn = {}; % Initialize inequality constraint vector
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Time step
-h = hk;
+h = tfk/nk;
 % Loop over collocation points
 for j=1:d
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -609,7 +611,7 @@ end
 ineq_constr_syn = vertcat(ineq_constr_syn{:});
 
 % Casadi function to get constraints and objective
-coll_input_vars_def = {hk,ak,aj,FTtildek,FTtildej,Qsk,Qsj,Qdotsk,Qdotsj,vAk,dFTtildej,Aj,M_ort_coordk,M_ort_bodyk};
+coll_input_vars_def = {tfk,nk,ak,aj,FTtildek,FTtildej,Qsk,Qsj,Qdotsk,Qdotsj,vAk,dFTtildej,Aj,M_ort_coordk,M_ort_bodyk};
 if nq.torqAct > 0
     coll_input_vars_def = [coll_input_vars_def,{a_ak,a_aj,e_ak}];
 end
@@ -625,7 +627,7 @@ f_coll = Function('f_coll',coll_input_vars_def,...
 f_coll_map = f_coll.map(N,S.solver.parallel_mode,S.solver.N_threads);
 
 % evaluate function with opti variables
-coll_input_vars_eval = {tf*dtau,a(:,1:end-1), a_col, FTtilde(:,1:end-1), FTtilde_col,...
+coll_input_vars_eval = {tf,dtau_inv,a(:,1:end-1), a_col, FTtilde(:,1:end-1), FTtilde_col,...
     Qs(:,1:end-1), Qs_col, Qdots(:,1:end-1), Qdots_col, vA, dFTtilde_col, A_col,...
      M_ort_coord_opti, M_ort_body_opti};
 if nq.torqAct > 0
@@ -1060,7 +1062,7 @@ Syn_cost        = 0;
 TrackSyn_cost   = 0;
 count           = 1;
 for k=1:N
-    h_opt = tf_opt*dtau(k);
+    h_opt = tf_opt/dtau_inv(k);
     for j=1:d
         % Get muscle-tendon lengths, velocities, moment arms
         [lMTkj_opt_all,vMTkj_opt_all,~] = ...
