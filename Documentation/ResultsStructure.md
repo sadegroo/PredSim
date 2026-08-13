@@ -36,6 +36,18 @@ See the [overview of settings](../README.md#Required-Settings) for more informat
 | mesh_intervals | relative durations of the mesh intervals | 1 x *S.solver.N_meshes* | [-] |
 | mesh_GC | timestamps of mesh points of gait cycle | 1 x (mesh + 1) | [s] |
 
+### R.mesh
+| Field | Description | Dimension | Unit |
+|------ | ----------- | ---- | ---- |
+| error | relative local discretization error of each mesh interval | 1 x *S.solver.N_meshes* | [-] |
+| error_abs | absolute local discretization error per coordinate | *S.solver.N_meshes* x coordinates | [rad or m] |
+
+These are Betts' local error estimate, computed in closed form from the collocation residual of
+the coordinate states, and are reported on every run at no extra cost.
+Unlike *R.kinematics* and *R.ground_reaction*, which are on the gait cycle grid described at the
+top of this document, *R.mesh.error* is on the OCP mesh: one entry per mesh interval, spanning
+*R.time.mesh*, which is **half** a gait cycle when *S.misc.gaitmotion_type* is *HalfGaitCycle*.
+
 ### R.colheaders
 | Field | Description | Dimension | Unit |
 |------ | ----------- | ---- | ---- |

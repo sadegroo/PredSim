@@ -20,7 +20,7 @@ function [] = OCP_formulation(S,model_info,f_casadi)
 % Original date: January-May/2022
 %
 % Last edit by: Sander De Groof
-% Last edit date: 10/August/2026
+% Last edit date: 11/August/2026
 %
 % --------------------------------------------------------------------------
 % This file is part of PredSim.
@@ -1031,6 +1031,11 @@ for i=1:N
 end
 tgrid_ext(end)=tf_opt;
 
+% discretization error estimate per mesh interval
+[mesh_error,mesh_error_abs] = getMeshError(q_opt_unsc_all.rad,q_col_opt_unsc.rad,...
+    qdot_opt_unsc_all.rad,tf_opt*dtau,C,d);
+disp(['Max local discretization error: ' num2str(max(mesh_error),'%.2e')])
+
 if strcmp(S.misc.gaitmotion_type,'HalfGaitCycle')
     t_mesh_GC = [tgrid(1:end-1),tgrid(1:end)+tgrid(end)];
 else
@@ -1341,6 +1346,8 @@ R.time.mesh = tgrid;
 R.time.coll = tgrid_ext;
 R.time.mesh_GC = t_mesh_GC;
 R.time.mesh_intervals = dtau;
+R.mesh.error = mesh_error;
+R.mesh.error_abs = mesh_error_abs;
 R.colheaders.coordinates = model_info.ExtFunIO.coord_names.all;
 R.colheaders.muscles = model_info.muscle_info.muscle_names;
 R.colheaders.objective = contributionCost.labels;
